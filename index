@@ -1,4 +1,156 @@
-import pandas as pd
-import numpy as np
-import Series, DataFrame frmo pd 
+import time
+import sys, getopt
+import datetime
+from poloniex import Poloniex
 
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, relationship
+
+import multiprocessing
+from multiprocessing import Pool
+
+
+#----------------------------------
+polo = Poloniex()
+polo.key = 'GYTKD7FU-9IXAE30F-0EIE7F9Y-QRYQPZAW'
+polo.secret = '635ef6805b0424b9ea2a45eccb9c63498054e9d943d9d3767f8c59ee0e8f5d77f9af323f2604a46e43049cfb8ffb140856d3a123a6caf7ea9cbfb4bc2dbfc1c6'
+
+support = "https://poloniex.com/support/api/"
+#----------------------------------
+
+#methdods/fucntions/definitions/ wtv u wana call them================
+
+
+#DATABASE METHODS
+
+def insertData(list):
+	Session = sessionmaker(bind=engine)
+	session = Session()
+	
+	btc = BTC()
+	btc.id = list[0] #CANNOT DEAL WITH THE ID PROBLEM ....
+	btc.lastPrice = list[2]
+	btc.lowestAsk = list[3]
+	btc.highestBid = list[4]
+	btc.percentageChange = list[5]
+	btc.baseVolume = list[6]
+	btc.quoteVolume = list[7]
+	btc.frozen = list[8]
+	btc.pasthigh = list[9]
+	btc.pastlow = list[10]
+	
+	session.add(btc)
+	session.commit()
+	
+	session.close()
+	
+#ideally this prints the data, my program has not been able to 
+#reach this part yet lol
+def queryData():
+	Session = sessionmaker(bind=engine)
+	
+	session = Session()
+	
+	btc = session.query(BTC).all()
+	for bit in btc:
+		print(bit)
+		
+	session.close()
+	
+	
+	
+# METHODS THAT WORK WITH THE TICKER
+
+def createTicker(pair):
+	cPair = []
+	dash = '_'
+
+	for arg in pair:
+		cPair.append(arg)
+	
+	#print(
+	try:
+		currencyPair = cPair[0] + dash + cPair[1]
+		ticker = polo.returnTicker()[currencyPair]
+	except:
+		currencyPair = cPair[1] + dash + cPair[0]
+		ticker = polo.returnTicker()[currencyPair]
+		
+	return ticker
+	
+#methods that pull the data out of the ticker
+	
+def extractValues(ticker):
+	
+	valueList = []
+	
+	for y in ticker.values():
+		valueList.append(y)
+		
+	return valueList
+
+def extractKeys(ticker):
+	
+	keyList = []
+	
+	for x in ticker.keys():
+		keyList.append(x)
+	return keyList
+
+#END OF FUNCTION/DEF=========================================
+
+
+#Main body of the programe===========================================================
+
+if __name__ == "__main__":
+
+
+	#variables 
+
+	gap = "\n\n"
+
+	#Database code********************************************
+
+	Base = declarative_base()
+
+	class BTC(Base):
+		__tablename__ = 'BTC/ETH'
+		
+		
+		#10 variables in total ( columns )
+		id = Column('id', Integer, primary_key=True)
+		lastPrice = Column('Last Price',Integer, nullable=False)
+		lowestAsk = Column('Lowest Ask',Integer, nullable=False)
+		highestBid = Column('Highest Bid', Integer, nullable=False)
+		percentageChange = Column('Percentage Change', Integer, nullable=False)
+		baseVolume = Column('Base Volume',Integer, nullable=False)
+		quoteVolume = Column('quoteVolume',Integer, nullable=False)
+		frozen = Column('Frozen', String, nullable=True)
+		pasthigh = Column('24 hour high',Integer, nullable=False)
+		pastlow = Column('24 hour low',Integer, nullable=False)
+		
+	engine = create_engine('sqlite:///database.db', echo=True)
+
+	Base.metadata.create_all(bind=engine)
+	#*************************************************************
+
+
+
+	print('please type in the currency codes of your desired crypto pair')
+	coin1 = input('type first coin\t').upper()
+	coin2 = input('type second coin\t').upper()
+		
+	currencyPair = [coin1,coin2]
+	while True:
+			ticker = createTicker(currencyPair)
+			values = extractValues(ticker)
+			keys = extractKeys(ticker)
+			print(keys)
+			print(values)
+			insertData(values)
+			queryData()
+			print(gap)
+
+#THE END =====================================================================			
