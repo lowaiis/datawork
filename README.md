@@ -1,5 +1,5 @@
-# datawork
-Data sci projects
+# crypto bot trader
+bloop bloop bloop
 
-# This file is a repository of 2018s Data sci tutorials and projects
-# Mainly using python :)
+# Lowaiis' work
+# yo junwei can u see this! LOL if u can just message me
