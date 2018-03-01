@@ -1,0 +1,61 @@
+#Sqlite3 database
+
+import sqlite3
+import time
+import random
+import datetime
+
+'''
+	Creating a database to hold the data variables for machine learning
+	
+	This file will be used to set up a database ( cloud in the future ) to store data for machine learning
+	
+	This will just be the skeleton/shell of the table
+
+
+'''
+#connect to desired file/database
+conn = sqlite3.connect('data.db')
+
+#create a cursor to execute action
+c = conn.cursor()
+
+#create database 
+def create_table():
+	c.execute('''
+		CREATE TABLE IF NOT EXISTS coinData(
+			#11 variables
+      
+      id INTEGER,
+			last INTEGER,
+			lowest INTEGER,
+			highest INTEGER,
+			pct_chnge INTEGER,
+			bvol INTEGER,
+			qvol INTEGER,
+			froze INTEGER,
+			day_high INTEGER,
+			day_low INTEGER
+			time_stamp TEXT
+			)
+		'''	)
+
+# call this function everytime the ticker pulls new data							
+def data_entry(list):
+	
+	
+	#creates the time stamp
+	unix = time.time()
+	date = str(datetime.datetime.fromtimestamp(unix).strftime('%Y-%m-%d %H:%M:%S'))
+	c.execute('''
+		'INSERT INTO coinData(id, last, lowask, highask, pct_chnge, bvol, qvol, froze, high24, low24, time_stamp) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+		(id, last, lowask, highask, pct_chnge, bvol, qvol, froze, high24, low24, date)
+	''')
+	conn.commit()
+	
+	
+def read_db():
+	c.execute('SELECT * FROM coinData')
+	data = c.fetchall()
+	print(data)
+	
