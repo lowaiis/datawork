@@ -5,8 +5,6 @@ from poloniex import Poloniex
 
 #create the ticker console
 def createTicker():
-	polo = Poloniex('GYTKD7FU-9IXAE30F-0EIE7F9Y-QRYQPZAW','635ef6805b0424b9ea2a45eccb9c63498054e9d943d9d3767f8c59ee0e8f5d77f9af323f2604a46e43049cfb8ffb140856d3a123a6caf7ea9cbfb4bc2dbfc1c6')
-
 	support = "https://poloniex.com/support/api/"
 	return polo.returnTicker()['BTC_ETH']
 
