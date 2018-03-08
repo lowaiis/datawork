@@ -1,156 +1,115 @@
+import sqlite3
 import time
-import sys, getopt
+import random
 import datetime
+import pandas as pd 
+import numpy as np
 from poloniex import Poloniex
 
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, relationship
 
-import multiprocessing
-from multiprocessing import Pool
-
-
-#----------------------------------
-polo = Poloniex()
-polo.key = 'GYTKD7FU-9IXAE30F-0EIE7F9Y-QRYQPZAW'
-polo.secret = '635ef6805b0424b9ea2a45eccb9c63498054e9d943d9d3767f8c59ee0e8f5d77f9af323f2604a46e43049cfb8ffb140856d3a123a6caf7ea9cbfb4bc2dbfc1c6'
-
-support = "https://poloniex.com/support/api/"
-#----------------------------------
-
-#methdods/fucntions/definitions/ wtv u wana call them================
-
-
-#DATABASE METHODS
-
-def insertData(list):
-	Session = sessionmaker(bind=engine)
-	session = Session()
+'''
+	Creating a database to hold the data variables for machine learning
 	
-	btc = BTC()
-	btc.id = list[0] #CANNOT DEAL WITH THE ID PROBLEM ....
-	btc.lastPrice = list[2]
-	btc.lowestAsk = list[3]
-	btc.highestBid = list[4]
-	btc.percentageChange = list[5]
-	btc.baseVolume = list[6]
-	btc.quoteVolume = list[7]
-	btc.frozen = list[8]
-	btc.pasthigh = list[9]
-	btc.pastlow = list[10]
+	This file will be used to set up a database ( cloud in the future ) to store data for machine learning
 	
-	session.add(btc)
-	session.commit()
+	This will just be the skeleton/shell of the table
+
+
+'''
+
+#--Create database 
+def create_table():
+	c.execute('DROP TABLE IF EXISTS datab')
+	c.execute('''
+		CREATE TABLE IF NOT EXISTS datab(
+			id INTEGER,
+			last REAL,
+			lowest REAL,
+			highest REAL,
+			pct_chnge REAL,
+			bvol REAL,
+			qvol REAL,
+			froze INTEGER,
+			day_high REAL,
+			day_low REAL
+			)
+		'''	)
+
+#--Call this function everytime the ticker pulls new data							
+def data_entry(list):
 	
-	session.close()
+	#creates the time stamp
+	unix = time.time()
+	date = str(datetime.datetime.fromtimestamp(unix).strftime('%Y-%m-%d %H:%M:%S'))
 	
-#ideally this prints the data, my program has not been able to 
-#reach this part yet lol
-def queryData():
-	Session = sessionmaker(bind=engine)
-	
-	session = Session()
-	
-	btc = session.query(BTC).all()
-	for bit in btc:
-		print(bit)
+	c.execute("INSERT INTO datab VALUES (?,?,?,?,?,?,?,?,?,?)",(list[0],list[1],list[2],list[3],list[4],list[5],list[6],list[7],list[8],list[9],))
 		
-	session.close()
+	#(id, last, lowest, highest, pct_chnge, bvol, qvol, froze, day_high, day_low)
 	
-	
-	
-# METHODS THAT WORK WITH THE TICKER
+	conn.commit()
 
-def createTicker(pair):
-	cPair = []
-	dash = '_'
-
-	for arg in pair:
-		cPair.append(arg)
 	
-	#print(
-	try:
-		currencyPair = cPair[0] + dash + cPair[1]
-		ticker = polo.returnTicker()[currencyPair]
-	except:
-		currencyPair = cPair[1] + dash + cPair[0]
-		ticker = polo.returnTicker()[currencyPair]
+	
+def read_db():
+	c.execute('SELECT * FROM datab')
+	data = c.fetchall()
+	print(data)
+	
+#--Returns the live ticker
+def createTicker():
+	polo = Poloniex('GYTKD7FU-9IXAE30F-0EIE7F9Y-QRYQPZAW','635ef6805b0424b9ea2a45eccb9c63498054e9d943d9d3767f8c59ee0e8f5d77f9af323f2604a46e43049cfb8ffb140856d3a123a6caf7ea9cbfb4bc2dbfc1c6')
+
+	support = "https://poloniex.com/support/api/"
+	return polo
+
+	
+'''
+	Pulls data from Poloniex via a ticker object
+'''
+def pullData(ticker):
+	values = []
 		
-	return ticker
+	for j in ticker.values():
+			values.append(j)
+			
+	return values
+
+
 	
-#methods that pull the data out of the ticker
-	
-def extractValues(ticker):
-	
-	valueList = []
-	
-	for y in ticker.values():
-		valueList.append(y)
-		
-	return valueList
+#----- MAIN -----#	
 
-def extractKeys(ticker):
-	
-	keyList = []
-	
-	for x in ticker.keys():
-		keyList.append(x)
-	return keyList
-
-#END OF FUNCTION/DEF=========================================
+#connect to desired file/database
+conn = sqlite3.connect('data.db')
+#create a cursor to execute action
+c = conn.cursor()
 
 
-#Main body of the programe===========================================================
+'''
 
-if __name__ == "__main__":
+This section of code basically does the following
+1. create a live ticker ( The api object/cursor to communicate w Polo
+2. Select Currency Pair
+3. Create the table
 
-
-	#variables 
-
-	gap = "\n\n"
-
-	#Database code********************************************
-
-	Base = declarative_base()
-
-	class BTC(Base):
-		__tablename__ = 'BTC/ETH'
-		
-		
-		#10 variables in total ( columns )
-		id = Column('id', Integer, primary_key=True)
-		lastPrice = Column('Last Price',Integer, nullable=False)
-		lowestAsk = Column('Lowest Ask',Integer, nullable=False)
-		highestBid = Column('Highest Bid', Integer, nullable=False)
-		percentageChange = Column('Percentage Change', Integer, nullable=False)
-		baseVolume = Column('Base Volume',Integer, nullable=False)
-		quoteVolume = Column('quoteVolume',Integer, nullable=False)
-		frozen = Column('Frozen', String, nullable=True)
-		pasthigh = Column('24 hour high',Integer, nullable=False)
-		pastlow = Column('24 hour low',Integer, nullable=False)
-		
-	engine = create_engine('sqlite:///database.db', echo=True)
-
-	Base.metadata.create_all(bind=engine)
-	#*************************************************************
+'''
+p_ticker = createTicker()
+p_ticker.returnTicker()['BTC_ETH']
+create_table()
 
 
+'''
 
-	print('please type in the currency codes of your desired crypto pair')
-	coin1 = input('type first coin\t').upper()
-	coin2 = input('type second coin\t').upper()
-		
-	currencyPair = [coin1,coin2]
-	while True:
-			ticker = createTicker(currencyPair)
-			values = extractValues(ticker)
-			keys = extractKeys(ticker)
-			print(keys)
-			print(values)
-			insertData(values)
-			queryData()
-			print(gap)
+Here I use a while loop to grab live data and store it in the database
+1. call pullData() method to pump the values from Polo into the list, value_list
+2. pump all that data into database 
+3. print database
 
-#THE END =====================================================================			
+
+'''
+count = 1
+while True:
+	value_list = pullData(p_ticker.returnTicker()['BTC_ETH'])
+	data_entry(value_list)
+	read_db()
+	print('dataset: ', count)
+	count += 1
