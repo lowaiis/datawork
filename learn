@@ -1,0 +1,90 @@
+import sqlite3 
+import tensorflow as tf
+import time
+import pandas as pd
+import numpy as np
+from poloniex import Poloniex
+
+'''
+
+just some basic methods to get data from db
+
+last_price/	pct_chnge/ high/ low/ vol
+
+'''
+def pull_price():
+	c.execute('SELECT last_price FROM coinData')
+	data=list(c.fetchall())
+	return data
+
+def pull_vol():
+	c.execute('SELECT vol FROM coinData')
+	data=list(c.fetchall())
+	return data
+	
+def pull_change():
+	c.execute('SELECT pct_chnge FROM coinData')
+	data=list(c.fetchall())
+	return data
+	
+def pull_high():
+	c.execute('SELECT high FROM coinData')
+	data=list(c.fetchall())
+	return data
+	
+def pull_low():
+	c.execute('SELECT low FROM coinData')
+	data=list(c.fetchall())
+	return data
+	
+def pull_all():
+	c.execute('SELECT * FROM coinData')
+	data=list(c.fetchall())
+	return data
+	
+'''
+
+tensorflow part
+
+'''
+def feat_frame(feat_col):
+
+	vol = pd.Series(pull_vol())
+	change = pd.Series(pull_change())
+	high = pd.Series(pull_high())
+	low = pd.Series(pull_low())
+
+	df = pd.DataFrame(columns = feat_col)
+	df['vol'] = vol.values
+	df['pct_chnge'] = change.values
+	df['high'] = high.values
+	df['low'] = low.values	
+	
+	return df
+
+def label_frame(lab):
+	price = pd.Series(pull_price())
+	df = pd.DataFrame(price.values, columns = lab)
+	print(df)
+	return(df)
+	
+'''
+
+main
+
+'''
+conn = sqlite3.connect('coinData.db')
+c = conn.cursor()
+feat_col = ['vol','pct_chnge','high','low']
+label = ['price']
+
+#	Create label and feature dataframe
+
+label_frame(label)
+feat_frame(feat_col)
+
+	
+	
+	
+	
+	
